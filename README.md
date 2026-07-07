@@ -12,7 +12,9 @@ not score, rank, recommend, enforce, or interpret a manifest in any way.
 
 ## Install / use
 
-The package targets the name `agent-manifest`.
+> **Naming note.** The unscoped npm package named `agent-manifest` is an
+> **unrelated third-party project**. This CLI is not published to npm yet and
+> will be released under this project's npm scope.
 
 ### Local (from a clone)
 
@@ -28,13 +30,12 @@ directly:
 agent-manifest validate ./manifest.json
 ```
 
-### npx (once published)
+### npx (not yet published)
 
-> Not yet published to npm. Once published, it can be run without installing:
-
-```bash
-npx agent-manifest validate ./manifest.json
-```
+> **Do not run `npx agent-manifest`.** That command installs the unrelated
+> third-party package mentioned above, not this CLI. Once this CLI is
+> published under this project's npm scope, the correct `npx` invocation
+> will be documented here. Until then, use the local install method above.
 
 ## Command
 

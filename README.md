@@ -1,6 +1,6 @@
-# agent-manifest
+# @agent-manifest/cli
 
-Command-line validator for [Agent Manifest](https://agent-manifest-spec.org) v1.0 declarations.
+Command-line validator for [Agent Manifest](https://agent-manifest-spec.org) v1.0 declarations. Installs the `agent-manifest` command.
 
 `agent-manifest` checks a manifest document against the Agent Manifest v1.0 JSON
 Schema and tells you whether it conforms. It validates structure only — it does
@@ -12,9 +12,10 @@ not score, rank, recommend, enforce, or interpret a manifest in any way.
 
 ## Install / use
 
-> **Naming note.** The unscoped npm package named `agent-manifest` is an
-> **unrelated third-party project**. This CLI is not published to npm yet and
-> will be released under this project's npm scope.
+> **Naming note.** This CLI will be published as `@agent-manifest/cli` (the
+> installed command stays `agent-manifest`). It is **not published to npm yet.**
+> The unscoped npm package named `agent-manifest` is an unrelated third-party
+> project — installing it will not give you this validator.
 
 ### Local (from a clone)
 
@@ -34,8 +35,8 @@ agent-manifest validate ./manifest.json
 
 > **Do not run `npx agent-manifest`.** That command installs the unrelated
 > third-party package mentioned above, not this CLI. Once this CLI is
-> published under this project's npm scope, the correct `npx` invocation
-> will be documented here. Until then, use the local install method above.
+> published, the invocation will be `npx @agent-manifest/cli validate <file>`.
+> Until then, use the local install method above.
 
 ## Command
 

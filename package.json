@@ -1,7 +1,27 @@
 {
-  "name": "agent-manifest",
+  "name": "@agent-manifest/cli",
   "version": "0.1.0",
-  "description": "Command-line validator for Agent Manifest v1.0 declarations.",
+  "description": "Command-line validator for Agent Manifest v1.0 declarations. Checks a manifest's structure against the published Agent Manifest v1.0 JSON Schema; structural validation only.",
+  "keywords": [
+    "agent-manifest",
+    "agent-manifest-spec",
+    "agent-declaration",
+    "declarative-manifest",
+    "agent-boundaries",
+    "ai-agent",
+    "json-schema",
+    "schema-validation",
+    "structural-validation",
+    "validator"
+  ],
+  "homepage": "https://agent-manifest-spec.org",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agent-manifest/agent-manifest-cli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/agent-manifest/agent-manifest-cli/issues"
+  },
   "license": "Apache-2.0",
   "type": "module",
   "engines": {

@@ -1,6 +1,7 @@
-import pc from 'picocolors';
 import { CliError } from './errors.js';
-import { readSource, parseJson } from './io.js';
+import { createColors, shouldUseColor } from './color.js';
+import { readSource, parseJson, describeRef, STDIN_REF } from './io.js';
+import { writeOut, writeErr } from './output.js';
 import {
   loadVendoredSchema,
   loadAlternativeSchema,
@@ -8,26 +9,46 @@ import {
   VENDORED_SCHEMA_VERSION,
 } from './schema.js';
 import { compileSchema, validateData } from './validate.js';
+import { CLI_VERSION } from './version.js';
 
-const USAGE = `agent-manifest validate <file|url> [--schema <path-or-url>] [--json]
+const USAGE = `agent-manifest validate <file|url|-> [--schema <path-or-url>] [--json] [--no-color]
 
-Validate an Agent Manifest against the vendored Agent Manifest v1.0 schema.
+Validate an Agent Manifest against the vendored Agent Manifest v1.0 JSON Schema.
+Structural validation only: the CLI does not score, rank, certify, or enforce.
+
+Arguments:
+  <file|url|->            Manifest to validate. "-" reads standard input.
 
 Options:
-  --schema <path-or-url>  Validate against an alternative schema.
-  --json                  Emit machine-readable JSON output.
+  --schema <path-or-url>  Validate against an alternative schema instead of the
+                          vendored Agent Manifest v1.0 schema.
+  --json                  Emit a single machine-readable JSON object on stdout.
+  --no-color              Never emit ANSI colour. NO_COLOR is also honoured.
   -h, --help              Show this help.
-  -V, --version           Show the CLI version.`;
+  -V, --version           Show the CLI version.
+
+Exit codes:
+  0  Manifest is valid.
+  1  Manifest was read and parsed but failed schema validation.
+  2  I/O, parse, schema-load or usage error; validation did not complete.
+
+Examples:
+  agent-manifest validate ./manifest.json
+  agent-manifest validate ./manifest.json --json
+  cat ./manifest.json | agent-manifest validate -
+  agent-manifest validate https://example.com/agent-manifest.json`;
 
 /** Parse argv (without node/script) into options and positionals. */
 export function parseArgs(argv) {
-  const opts = { json: false, schema: null, help: false, version: false };
+  const opts = { json: false, schema: null, help: false, version: false, noColor: false };
   const positionals = [];
 
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--json') {
       opts.json = true;
+    } else if (arg === '--no-color') {
+      opts.noColor = true;
     } else if (arg === '--help' || arg === '-h') {
       opts.help = true;
     } else if (arg === '--version' || arg === '-V') {
@@ -40,7 +61,7 @@ export function parseArgs(argv) {
       opts.schema = value;
     } else if (arg.startsWith('--schema=')) {
       opts.schema = arg.slice('--schema='.length);
-    } else if (arg.startsWith('-') && arg !== '-') {
+    } else if (arg.startsWith('-') && arg !== STDIN_REF) {
       throw new CliError(2, `Unknown option: ${arg}`);
     } else {
       positionals.push(arg);
@@ -50,35 +71,33 @@ export function parseArgs(argv) {
   return { opts, positionals };
 }
 
-/** Print human-readable result and return the exit code. */
-function reportHuman(result, schemaVersion) {
+/** Print the human-readable result and return the exit code. */
+function reportHuman(result, schemaVersion, inputRef, colors) {
   const versionLabel = schemaVersion == null ? 'unresolved' : schemaVersion;
+  const source = describeRef(inputRef);
+
   if (result.valid) {
-    process.stdout.write(
-      `${pc.green('✔')} Valid Agent Manifest (schema ${versionLabel})\n`,
-    );
+    writeOut(`${colors.green('Valid')} Agent Manifest (schema ${versionLabel}): ${source}\n`);
     return 0;
   }
 
-  process.stdout.write(
-    `${pc.red('✖')} Invalid Agent Manifest (schema ${versionLabel})\n\n`,
-  );
+  writeOut(`${colors.red('Invalid')} Agent Manifest (schema ${versionLabel}): ${source}\n\n`);
   for (const error of result.errors) {
-    process.stdout.write(`  ${pc.yellow(error.path)}  ${error.message}\n`);
+    writeOut(`  ${colors.yellow(error.path)}  ${error.message}\n`);
   }
   const count = result.errors.length;
-  process.stdout.write(`\n${count} ${count === 1 ? 'error' : 'errors'}\n`);
+  writeOut(`\n${count} ${count === 1 ? 'error' : 'errors'}\n`);
   return 1;
 }
 
-/** Print machine-readable JSON result (valid true/false) and return the exit code. */
+/** Print the machine-readable JSON result (valid true/false) and return the exit code. */
 function reportJson(result, schemaVersion) {
   const payload = {
     valid: result.valid,
     schema_version: schemaVersion,
     errors: result.errors,
   };
-  process.stdout.write(`${JSON.stringify(payload)}\n`);
+  writeOut(`${JSON.stringify(payload)}\n`);
   return result.valid ? 0 : 1;
 }
 
@@ -90,7 +109,7 @@ function reportJson(result, schemaVersion) {
  * Without --json, a single-line message is written to stderr. No stack traces.
  *
  * @param {CliError|Error} err
- * @param {{ json: boolean, schemaVersion: string|number|null }} ctx
+ * @param {{ json: boolean, schemaVersion: string|number|null, colors: object }} ctx
  */
 function reportOperationalError(err, ctx) {
   if (ctx.json) {
@@ -99,9 +118,9 @@ function reportOperationalError(err, ctx) {
       schema_version: ctx.schemaVersion,
       errors: [{ path: '', message: err.message }],
     };
-    process.stdout.write(`${JSON.stringify(payload)}\n`);
+    writeOut(`${JSON.stringify(payload)}\n`);
   } else {
-    process.stderr.write(`${pc.red('Error:')} ${err.message}\n`);
+    writeErr(`${ctx.colors.red('Error:')} ${err.message}\n`);
   }
 }
 
@@ -109,7 +128,7 @@ function reportOperationalError(err, ctx) {
 async function runValidate(positionals, opts, ctx) {
   const inputRef = positionals[0];
   if (inputRef === undefined) {
-    throw new CliError(2, 'Missing <file|url> argument for validate.');
+    throw new CliError(2, 'Missing <file|url|-> argument for validate.');
   }
   if (positionals.length > 1) {
     throw new CliError(2, `Unexpected extra argument: ${positionals[1]}`);
@@ -140,7 +159,7 @@ async function runValidate(positionals, opts, ctx) {
 
   return opts.json
     ? reportJson(result, schemaVersion)
-    : reportHuman(result, schemaVersion);
+    : reportHuman(result, schemaVersion, inputRef, ctx.colors);
 }
 
 /**
@@ -151,20 +170,26 @@ async function runValidate(positionals, opts, ctx) {
  */
 export async function run(argv) {
   // schemaVersion starts null and is promoted once the schema is loaded, so the
-  // exit-2 JSON shape reports the correct stage. json is pre-detected so that an
-  // error during argument parsing can still honor --json.
-  const ctx = { json: argv.includes('--json'), schemaVersion: null };
+  // exit-2 JSON shape reports the correct stage. --json and --no-color are
+  // pre-detected so that an error during argument parsing still honours them.
+  const preOpts = { noColor: argv.includes('--no-color') };
+  const ctx = {
+    json: argv.includes('--json'),
+    schemaVersion: null,
+    colors: createColors(shouldUseColor(preOpts, process.env, process.stdout.isTTY)),
+  };
 
   try {
     const { opts, positionals } = parseArgs(argv);
     ctx.json = opts.json;
+    ctx.colors = createColors(shouldUseColor(opts, process.env, process.stdout.isTTY));
 
     if (opts.version) {
-      process.stdout.write('0.1.0\n');
+      writeOut(`${CLI_VERSION}\n`);
       return 0;
     }
     if (opts.help) {
-      process.stdout.write(`${USAGE}\n`);
+      writeOut(`${USAGE}\n`);
       return 0;
     }
     if (positionals.length === 0) {
@@ -173,7 +198,7 @@ export async function run(argv) {
 
     const command = positionals[0];
     if (command !== 'validate') {
-      throw new CliError(2, `Unknown command: ${command}`);
+      throw new CliError(2, `Unknown command: ${command}. The only command is "validate".`);
     }
 
     return await runValidate(positionals.slice(1), opts, ctx);

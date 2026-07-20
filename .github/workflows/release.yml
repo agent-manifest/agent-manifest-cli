@@ -1,0 +1,72 @@
+name: Release
+
+# Manual only. This workflow cannot be triggered by a push, a tag, a pull
+# request, or a schedule: publication is a human decision, taken once, on a
+# commit that has already passed CI.
+#
+# It is inert until all of the following exist:
+#   - the `npm-publish` environment, with required reviewers configured;
+#   - the `NPM_TOKEN` secret in that environment (or trusted publishing);
+#   - an explicit `confirm: publish` input at dispatch time.
+#
+# It publishes exactly what `npm pack` produced and verifies the result. It does
+# not create tags, releases, or commits — those are made by hand beforehand.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "publish" to confirm. Anything else aborts.'
+        required: true
+        default: 'no'
+      tag:
+        description: 'npm dist-tag to publish under.'
+        required: true
+        default: 'latest'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm-publish
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    steps:
+      - name: Refuse an unconfirmed dispatch
+        if: ${{ inputs.confirm != 'publish' }}
+        run: |
+          echo "Dispatch not confirmed; nothing published."
+          exit 1
+
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+
+      - name: Verify before publishing
+        run: |
+          npm test
+          npm run check:schema
+          npm pack
+          tar -tzf ./*.tgz | sort
+          sha256sum ./*.tgz
+
+      - name: Publish
+        run: npm publish --provenance --access public --tag "${{ inputs.tag }}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify the published package installs and runs
+        run: |
+          version=$(npm pkg get version | tr -d '"')
+          cd "$(mktemp -d)"
+          npm install -g "@agent-manifest/cli@$version"
+          agent-manifest --version
+          agent-manifest --help

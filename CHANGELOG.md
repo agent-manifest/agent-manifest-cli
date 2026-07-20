@@ -11,10 +11,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Nothing yet.
 
-## 0.1.0 — unreleased
+## 0.1.0 — 2026-07-20
 
-Initial version. Not published to npm at the time of writing; the entry is dated
-on release.
+First version. It establishes the command contract — arguments, exit codes,
+stream separation and the `--json` shape — that later versions are expected to
+keep.
 
 ### Added
 
@@ -29,5 +30,15 @@ on release.
 - `--no-color`, in addition to the `NO_COLOR` and `FORCE_COLOR` conventions;
   colour is never emitted when stdout is not a terminal.
 - `schema/SOURCE.json`, recording the canonical source and sha-256 of the
-  vendored schema, and an offline parity test plus an online drift check
-  (`npm run check:schema`).
+  vendored schema, and an offline parity test plus a scheduled online drift
+  check in the repository.
+
+### Notes
+
+- The published package contains `bin`, `src`, `schema`, `README.md`,
+  `CHANGELOG.md` and `LICENSE`, and nothing else. It declares no install-time
+  script, emits no telemetry, writes nothing to disk, and reaches the network
+  only when the manifest reference or `--schema` is an explicit `http(s)` URL.
+- Repository maintenance tools live in `scripts/` and are invoked directly, not
+  through npm scripts, so that every script declared in `package.json` still
+  works from an installed copy.

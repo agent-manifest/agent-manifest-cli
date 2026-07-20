@@ -1,0 +1,103 @@
+name: CI
+
+# Read-only verification. This workflow never writes to the repository and never
+# publishes anything.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: test (node ${{ matrix.node }}, ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['20', '22', '24']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Install dependencies from the lockfile
+        run: npm ci
+
+      - name: Run the test suite
+        run: npm test
+
+  package:
+    name: package contents and clean install
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - run: npm ci
+
+      - name: Build the tarball and record its contents
+        run: |
+          npm pack
+          tarball=$(ls ./*.tgz)
+          echo "TARBALL=$tarball" >> "$GITHUB_ENV"
+          tar -tzf "$tarball" | sort
+          sha256sum "$tarball"
+
+      - name: Reject internal material in the tarball
+        run: |
+          set -e
+          contents=$(tar -tzf "$TARBALL")
+          for forbidden in test/ examples/ scripts/ .github/ BACKLOG.md CONTRIBUTING.md .DS_Store node_modules/; do
+            if printf '%s\n' "$contents" | grep -q "^package/$forbidden"; then
+              echo "Tarball contains $forbidden"
+              exit 1
+            fi
+          done
+          for required in package/bin/agent-manifest.js package/src/cli.js \
+                          package/schema/agent-manifest-v1.0.schema.json \
+                          package/README.md package/LICENSE package/CHANGELOG.md; do
+            printf '%s\n' "$contents" | grep -qx "$required" || { echo "missing $required"; exit 1; }
+          done
+
+      - name: Install the tarball globally and exercise the command
+        run: |
+          npm install -g "./$TARBALL"
+          agent-manifest --version
+          agent-manifest --help
+          agent-manifest validate examples/minimal.json
+          agent-manifest validate examples/full.json --json
+          cat examples/minimal.json | agent-manifest validate -
+          if agent-manifest validate examples/does-not-exist.json; then
+            echo "expected a non-zero exit"; exit 1
+          fi
+
+      - name: Confirm the package leaves nothing behind
+        run: |
+          npm uninstall -g @agent-manifest/cli
+          if command -v agent-manifest; then echo "command still present"; exit 1; fi
+
+  audit:
+    name: dependency audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm ci
+      - run: npm audit --audit-level=moderate

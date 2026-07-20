@@ -1,0 +1,27 @@
+name: Schema parity
+
+# Agent Manifest v1.0 is frozen. This job compares the vendored schema with the
+# canonical published copy and fails if they diverge. It is read-only and never
+# re-vendors anything: drift is reported, not repaired.
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'schema/**'
+      - 'scripts/check-schema-parity.js'
+
+permissions:
+  contents: read
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm run check:schema

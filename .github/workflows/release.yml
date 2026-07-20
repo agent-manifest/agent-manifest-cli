@@ -5,12 +5,22 @@ name: Release
 # commit that has already passed CI.
 #
 # It is inert until all of the following exist:
-#   - the `npm-publish` environment, with required reviewers configured;
-#   - the `NPM_TOKEN` secret in that environment (or trusted publishing);
-#   - an explicit `confirm: publish` input at dispatch time.
+#   - the `npm-publish` environment in this repository, with required reviewers;
+#   - a trusted publisher configured on npmjs.com for @agent-manifest/cli,
+#     pointing at this repository, this workflow file and that environment;
+#   - an explicit `confirm: publish` input at dispatch time;
+#   - the sha-256 of the approved tarball, typed at dispatch time.
 #
-# It publishes exactly what `npm pack` produced and verifies the result. It does
-# not create tags, releases, or commits — those are made by hand beforehand.
+# Authentication is OpenID Connect (npm trusted publishing). There is no npm
+# token in this repository and none is read here. Provenance is attested by npm
+# from the OIDC claim, so the published package is traceable to this commit.
+#
+# The workflow publishes the exact tarball it built, after checking that its
+# sha-256 equals the value approved by hand. If the build is not reproducible,
+# it stops rather than publish an artefact nobody reviewed.
+#
+# It does not create tags, releases, or commits. Those are made by hand
+# beforehand, and the tag is what this workflow is dispatched against.
 
 on:
   workflow_dispatch:
@@ -19,6 +29,9 @@ on:
         description: 'Type "publish" to confirm. Anything else aborts.'
         required: true
         default: 'no'
+      sha256:
+        description: 'sha-256 of the approved tarball. A mismatch aborts.'
+        required: true
       tag:
         description: 'npm dist-tag to publish under.'
         required: true
@@ -33,7 +46,7 @@ jobs:
     environment: npm-publish
     permissions:
       contents: read
-      id-token: write # npm provenance
+      id-token: write # OIDC: trusted publishing and provenance
     steps:
       - name: Refuse an unconfirmed dispatch
         if: ${{ inputs.confirm != 'publish' }}
@@ -45,23 +58,48 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing requires npm 11.5.1 or later.
+      - name: Use an npm release that supports trusted publishing
+        run: |
+          npm install -g npm@latest
+          npm --version
 
       - run: npm ci
 
       - name: Verify before publishing
         run: |
           npm test
-          npm run check:schema
-          npm pack
-          tar -tzf ./*.tgz | sort
-          sha256sum ./*.tgz
+          node scripts/check-schema-parity.js
 
-      - name: Publish
-        run: npm publish --provenance --access public --tag "${{ inputs.tag }}"
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Check that the tag matches the version being published
+        run: |
+          version=$(npm pkg get version | tr -d '"')
+          ref="${GITHUB_REF#refs/tags/}"
+          if [ "$GITHUB_REF" != "$ref" ] && [ "$ref" != "v$version" ]; then
+            echo "Dispatched against $ref but the package version is $version."
+            exit 1
+          fi
+
+      - name: Build the tarball and check it against the approved checksum
+        id: pack
+        run: |
+          file=$(npm pack --silent)
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+          echo "Contents:"
+          tar -tzf "$file" | sort
+          actual=$(sha256sum "$file" | cut -d' ' -f1)
+          echo "approved: ${{ inputs.sha256 }}"
+          echo "built:    $actual"
+          if [ "$actual" != "${{ inputs.sha256 }}" ]; then
+            echo "The tarball does not match the approved checksum; nothing published."
+            exit 1
+          fi
+
+      - name: Publish the approved tarball
+        run: npm publish "${{ steps.pack.outputs.file }}" --provenance --tag "${{ inputs.tag }}"
 
       - name: Verify the published package installs and runs
         run: |

@@ -45,9 +45,11 @@
     "README.md",
     "LICENSE"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "test": "node --test",
-    "check:schema": "node scripts/check-schema-parity.js",
     "check:package": "npm pack --dry-run"
   },
   "dependencies": {

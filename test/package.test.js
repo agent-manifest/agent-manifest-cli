@@ -54,3 +54,31 @@ test('the runtime dependency set is the audited one', () => {
 test('published files list carries no fixtures, backlog or internal material', () => {
   assert.deepEqual(pkg.files, ['bin', 'src', 'schema', 'CHANGELOG.md', 'README.md', 'LICENSE']);
 });
+
+test('the scope is published publicly and to the public registry', () => {
+  assert.equal(pkg.publishConfig.access, 'public');
+  assert.equal(pkg.publishConfig.registry, undefined);
+});
+
+test('every declared script still works from an installed copy', () => {
+  // package.json ships in the tarball; scripts/, test/ and .github/ do not. A
+  // script that names a repository-only file would fail with MODULE_NOT_FOUND
+  // for anyone who installs the package, so repository tooling is invoked
+  // directly instead of through npm.
+  assert.deepEqual(pkg.scripts, {
+    test: 'node --test',
+    'check:package': 'npm pack --dry-run',
+  });
+
+  const shipped = new Set(pkg.files);
+  for (const [name, command] of Object.entries(pkg.scripts)) {
+    for (const token of command.split(/\s+/)) {
+      if (!token.includes('/') || token.startsWith('-')) continue;
+      const top = token.replace(/^\.\//, '').split('/')[0];
+      assert.ok(
+        shipped.has(top),
+        `script "${name}" references ${token}, which is not in the published files list`,
+      );
+    }
+  }
+});

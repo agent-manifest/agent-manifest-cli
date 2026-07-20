@@ -31,10 +31,16 @@ Not accepted here:
 
 ```bash
 npm ci
-npm test              # unit, contract and end-to-end tests, offline
-npm run check:schema  # online: vendored schema vs the canonical published copy
-npm run check:package # tarball contents, no publish
+npm test               # unit, contract and end-to-end tests, offline
+npm run check:package  # tarball contents, no publish
+
+node scripts/check-schema-parity.js  # online: vendored schema vs the canonical
+                                     # published copy
 ```
+
+`scripts/` holds repository maintenance tools. They are deliberately not
+declared as npm scripts and not published in the tarball, so that every script
+declared in `package.json` is one that still works from an installed copy.
 
 Requirements for a pull request:
 

@@ -291,8 +291,8 @@ and published at
   never a validation failure (exit `1`).
 - [`schema/SOURCE.json`](schema/SOURCE.json) records the canonical source, the
   sha-256 of the vendored file, and the synchronisation policy. `npm test`
-  verifies the checksum offline; `npm run check:schema` compares the vendored
-  copy against the canonical published schema over the network.
+  verifies the checksum offline; a scheduled repository job compares the
+  vendored copy against the canonical published schema over the network.
 - v1.0 is frozen, so any difference is drift and is treated as an incident: the
   CLI is not re-vendored until the divergence is explained upstream. A future
   schema version will be vendored as an additional file under a new CLI minor

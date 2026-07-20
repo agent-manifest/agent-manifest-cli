@@ -44,18 +44,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The environment is pinned to the one `release.yml` publishes from —
+      # ubuntu-latest, Node 24, current npm. `npm pack` output is not identical
+      # across npm major versions or operating systems, so the checksum recorded
+      # here is only an approval value if it is produced the same way it will be
+      # produced at publication time.
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
+
+      - run: npm install -g npm@latest
 
       - run: npm ci
 
       - name: Build the tarball and record its contents
         run: |
+          npm --version
           npm pack
           tarball=$(ls ./*.tgz)
           echo "TARBALL=$tarball" >> "$GITHUB_ENV"
           tar -tzf "$tarball" | sort
+          echo "Approval checksum for this commit:"
           sha256sum "$tarball"
 
       - name: Reject internal material in the tarball

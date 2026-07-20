@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: "Agent Manifest CLI"
+message: "This repository is a validator for the Agent Manifest specification. If you are citing the specification itself, cite the preferred-citation below rather than this software."
+type: software
+version: "0.1.0"
+url: "https://github.com/agent-manifest/agent-manifest-cli"
+repository-code: "https://github.com/agent-manifest/agent-manifest-cli"
+license: "Apache-2.0"
+abstract: "Command-line validator that checks the structure of an Agent Manifest v1.0 declaration against the published Agent Manifest v1.0 JSON Schema. Structural validation only: it does not score, rank, certify, or enforce."
+
+authors:
+  - family-names: "Capucci"
+    given-names: "Hernán Alfredo"
+    orcid: "https://orcid.org/0009-0008-7216-3032"
+
+preferred-citation:
+  type: report
+  title: "Agent Manifest — Core Declarative Specification (v1.0)"
+  authors:
+    - family-names: "Capucci"
+      given-names: "Hernán Alfredo"
+      orcid: "https://orcid.org/0009-0008-7216-3032"
+  doi: "10.5281/zenodo.18833956"
+  version: "1.0"
+  year: 2026

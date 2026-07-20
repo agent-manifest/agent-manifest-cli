@@ -52,3 +52,9 @@ test('SOURCE.json points at the canonical specification repository', () => {
   assert.equal(source.canonical_path, 'spec/v1.0/schema.json');
   assert.equal(source.canonical_url, 'https://agent-manifest-spec.org/spec/v1.0/schema.json');
 });
+
+test('the vendored schema contains no CRLF line endings', () => {
+  // A Windows checkout with core.autocrlf=true would otherwise rewrite the file
+  // and break the recorded checksum. .gitattributes marks it as non-text.
+  assert.equal(vendored.includes(Buffer.from('\r\n')), false);
+});

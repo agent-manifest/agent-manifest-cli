@@ -1,7 +1,7 @@
 {
   "name": "@agent-manifest/cli",
   "version": "0.1.0",
-  "description": "Command-line validator for Agent Manifest v1.0 declarations. Checks a manifest's structure against the published Agent Manifest v1.0 JSON Schema; structural validation only.",
+  "description": "Command-line validator for Agent Manifest v1.0 declarations. Checks a manifest's structure against the published Agent Manifest v1.0 JSON Schema; structural validation only. Not affiliated with the unrelated npm packages 'agent-manifest' or '@agentmanifest/*'.",
   "keywords": [
     "agent-manifest",
     "agent-manifest-spec",
@@ -22,6 +22,10 @@
   "bugs": {
     "url": "https://github.com/agent-manifest/agent-manifest-cli/issues"
   },
+  "author": {
+    "name": "Hernán Alfredo Capucci",
+    "url": "https://orcid.org/0009-0008-7216-3032"
+  },
   "license": "Apache-2.0",
   "type": "module",
   "engines": {
@@ -30,19 +34,24 @@
   "bin": {
     "agent-manifest": "bin/agent-manifest.js"
   },
+  "exports": {
+    "./package.json": "./package.json"
+  },
   "files": [
     "bin",
     "src",
     "schema",
+    "CHANGELOG.md",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "check:schema": "node scripts/check-schema-parity.js",
+    "check:package": "npm pack --dry-run"
   },
   "dependencies": {
     "ajv": "^8.17.1",
-    "ajv-formats": "^3.0.1",
-    "picocolors": "^1.1.1"
+    "ajv-formats": "^3.0.1"
   }
 }

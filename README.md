@@ -1,17 +1,22 @@
 # @agent-manifest/cli
 
-Command-line validator for [Agent Manifest](https://agent-manifest-spec.org) v1.0
-declarations. Installs the `agent-manifest` command.
+The Agent Manifest command-line interface (CLI) — the command-line validator for
+[Agent Manifest](https://agent-manifest-spec.org) v1.0 declarations. Installs the
+`agent-manifest` command.
 
 `agent-manifest` reads a manifest document and checks it against the Agent
 Manifest v1.0 JSON Schema. It validates structure only.
+
+The canonical documentation page for the CLI is
+<https://agent-manifest-spec.org/docs/cli/>. This repository is its source.
 
 ## Status
 
 | | |
 | --- | --- |
 | Version | 0.1.0 |
-| npm | **Not published yet.** See [Install](#install). |
+| npm | [`@agent-manifest/cli`](https://www.npmjs.com/package/@agent-manifest/cli) — published |
+| Command | `agent-manifest` |
 | Specification | Agent Manifest v1.0 (frozen), vendored by checksum |
 | Node.js | >= 20 (tested on 20, 22 and 24; Linux, macOS, Windows) |
 | Module system | ESM |
@@ -42,7 +47,12 @@ Manifest v1.0 JSON Schema. It validates structure only.
 
 ## Install
 
-The package is **not on npm yet**. Until it is published:
+```bash
+npm install -g @agent-manifest/cli                 # global command
+npx @agent-manifest/cli validate ./manifest.json   # one-off, no install
+```
+
+### From a clone
 
 ```bash
 git clone https://github.com/agent-manifest/agent-manifest-cli.git
@@ -58,13 +68,6 @@ npm link          # from the clone; npm unlink -g @agent-manifest/cli to undo
 agent-manifest validate ./examples/minimal.json
 ```
 
-Once published, the invocations will be:
-
-```bash
-npm install -g @agent-manifest/cli     # global command
-npx @agent-manifest/cli validate ./manifest.json   # one-off, no install
-```
-
 > **Naming.** The unscoped npm package `agent-manifest` and the `@agentmanifest/*`
 > scope are unrelated third-party projects. Installing either will not give you
 > this validator. Use the scoped name `@agent-manifest/cli`; the installed
@@ -73,7 +76,7 @@ npx @agent-manifest/cli validate ./manifest.json   # one-off, no install
 ### Updating and removing
 
 ```bash
-npm install -g @agent-manifest/cli@latest   # update (once published)
+npm install -g @agent-manifest/cli@latest   # update
 npm uninstall -g @agent-manifest/cli        # remove
 ```
 
@@ -341,11 +344,14 @@ design.
 
 ## Links
 
+- CLI documentation (canonical): <https://agent-manifest-spec.org/docs/cli/>
+- npm package: <https://www.npmjs.com/package/@agent-manifest/cli>
 - Specification site: <https://agent-manifest-spec.org>
 - Specification v1.0: <https://agent-manifest-spec.org/spec/v1.0/agent_manifest_v1.0.html>
 - JSON Schema v1.0: <https://agent-manifest-spec.org/spec/v1.0/schema.json>
 - Specification repository: <https://github.com/agent-manifest/agent-manifest>
 - This repository: <https://github.com/agent-manifest/agent-manifest-cli>
+- Contact (not for vulnerabilities): <https://agent-manifest-spec.org/contact/>
 
 ## Licence and author
 

@@ -1,6 +1,6 @@
 {
   "name": "@agent-manifest/cli",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Command-line validator for Agent Manifest v1.0 declarations. Checks a manifest's structure against the published Agent Manifest v1.0 JSON Schema; structural validation only. Not affiliated with the unrelated npm packages 'agent-manifest' or '@agentmanifest/*'.",
   "keywords": [
     "agent-manifest",

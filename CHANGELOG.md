@@ -11,6 +11,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 Nothing yet.
 
+## 0.1.1 — 2026-07-21
+
+Documentation only. No change to the command contract, the arguments, the exit
+codes, the `--json` shape, the vendored schema, or any dependency. A manifest
+that validated under 0.1.0 validates identically under 0.1.1.
+
+### Fixed
+
+- The README shipped with 0.1.0 stated that the package was not yet on npm and
+  presented the real install commands as hypothetical. Because npm renders the
+  README from the published tarball, that text remained on the package page
+  after publication. This release exists to replace it.
+
+### Changed
+
+- The README names the Agent Manifest command-line interface (CLI) and binds the
+  acronym to its expansion on first mention, matching the specification site.
+- Added links to the canonical documentation page
+  (<https://agent-manifest-spec.org/docs/cli/>), the npm package page, and the
+  project's contact path.
+
 ## 0.1.0 — 2026-07-20
 
 First version. It establishes the command contract — arguments, exit codes,

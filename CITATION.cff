@@ -2,7 +2,7 @@ cff-version: 1.2.0
 title: "Agent Manifest CLI"
 message: "This repository is a validator for the Agent Manifest specification. If you are citing the specification itself, cite the preferred-citation below rather than this software."
 type: software
-version: "0.1.0"
+version: "0.1.1"
 url: "https://github.com/agent-manifest/agent-manifest-cli"
 repository-code: "https://github.com/agent-manifest/agent-manifest-cli"
 license: "Apache-2.0"

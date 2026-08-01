@@ -14,7 +14,7 @@ The canonical documentation page for the CLI is
 
 | | |
 | --- | --- |
-| Version | 0.1.0 |
+| Version | 0.1.1 |
 | npm | [`@agent-manifest/cli`](https://www.npmjs.com/package/@agent-manifest/cli) — published |
 | Command | `agent-manifest` |
 | Specification | Agent Manifest v1.0 (frozen), vendored by checksum |

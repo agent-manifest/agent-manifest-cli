@@ -77,8 +77,9 @@ jobs:
               exit 1
             fi
           done
+          # No schema file is listed: the schema is not in this tarball any
+          # more, it is installed from @agent-manifest/schema alongside it.
           for required in package/bin/agent-manifest.js package/src/cli.js \
-                          package/schema/agent-manifest-v1.0.schema.json \
                           package/README.md package/LICENSE package/CHANGELOG.md; do
             printf '%s\n' "$contents" | grep -qx "$required" || { echo "missing $required"; exit 1; }
           done

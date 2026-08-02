@@ -17,7 +17,7 @@ The canonical documentation page for the CLI is
 | Version | 0.1.1 |
 | npm | [`@agent-manifest/cli`](https://www.npmjs.com/package/@agent-manifest/cli) — published |
 | Command | `agent-manifest` |
-| Specification | Agent Manifest v1.0 (frozen), vendored by checksum |
+| Specification | Agent Manifest v1.0 (frozen), from `@agent-manifest/schema` |
 | Node.js | >= 20 (tested on 20, 22 and 24; Linux, macOS, Windows) |
 | Module system | ESM |
 | Commands | `validate` — the only command |
@@ -26,7 +26,7 @@ The canonical documentation page for the CLI is
 ## What it does
 
 - Reads a manifest from a file path, an `http(s)` URL, or standard input.
-- Validates it against the vendored Agent Manifest v1.0 JSON Schema.
+- Validates it against the packaged Agent Manifest v1.0 JSON Schema.
 - Reports each failing field with its JSON Pointer path and the validator's own
   message.
 - Returns `0`, `1` or `2` so a script can distinguish "valid", "invalid" and
@@ -167,7 +167,7 @@ agent-manifest validate <file|url|-> [--schema <path-or-url>] [--json] [--no-col
 | Argument / option | Description |
 | --- | --- |
 | `<file\|url\|->` | Manifest to validate: a file path, an `http(s)` URL, or `-` for standard input. |
-| `--schema <path-or-url>` | Validate against an alternative schema instead of the vendored one. |
+| `--schema <path-or-url>` | Validate against an alternative schema instead of the packaged one. |
 | `--json` | Emit a single machine-readable JSON object on stdout. |
 | `--no-color` | Never emit ANSI colour. |
 | `-h`, `--help` | Show usage. Exits `0`. |
@@ -242,7 +242,7 @@ newline. The `valid` field distinguishes the three outcomes:
   location. For a missing required property, the property name is appended, so
   the pointer names the field that should exist. A whole-document error uses `/`.
 - For `valid: null`, `errors` holds at least one object whose `path` is `""`.
-- `schema_version` is `"1.0"` only for the vendored schema. With `--schema` it is
+- `schema_version` is `"1.0"` only for the packaged schema. With `--schema` it is
   the alternative schema's `version`, else its `$id`, else `null`.
 - For `valid: null`, `schema_version` is `null` if the failure happened before the
   schema was loaded, and the resolved version if it happened afterwards.
@@ -278,32 +278,39 @@ clean; `--no-color` forces it off in a CI system that fakes a TTY.
 
 ## Relationship to Agent Manifest v1.0
 
-The CLI ships a vendored copy of the v1.0 schema at
-[`schema/agent-manifest-v1.0.schema.json`](schema/agent-manifest-v1.0.schema.json),
-copied byte-for-byte from the canonical `spec/v1.0/schema.json` in
-[agent-manifest/agent-manifest](https://github.com/agent-manifest/agent-manifest)
-and published at
-<https://agent-manifest-spec.org/spec/v1.0/schema.json>.
+The CLI does not carry its own copy of the schema. It depends on
+[`@agent-manifest/schema`](https://www.npmjs.com/package/@agent-manifest/schema),
+which distributes the v1.0 schema byte-for-byte from the canonical
+`spec/v1.0/schema.json` in
+[agent-manifest/agent-manifest](https://github.com/agent-manifest/agent-manifest),
+published at <https://agent-manifest-spec.org/spec/v1.0/schema.json>. The
+checking itself is done by the shared validator in
+[`@agent-manifest/client`](https://www.npmjs.com/package/@agent-manifest/client),
+so a manifest gets the same verdict here as it does anywhere else in the
+ecosystem.
 
-- The default schema is **never fetched over the network**. It is read from the
-  installed package on disk, so validation against it is deterministic: the same
-  manifest gives the same result regardless of network conditions.
+- The default schema is **never fetched over the network**. It arrives at
+  install time and is read from `node_modules` on disk, so validation against it
+  is deterministic: the same manifest gives the same result regardless of
+  network conditions.
 - Determinism refers to the schema, not to the input. `validate <url>` uses the
-  network only to read the manifest; the schema is still the local copy.
+  network only to read the manifest; the schema is still local.
 - An unreachable or unreadable input URL is an operational error (exit `2`),
   never a validation failure (exit `1`).
-- [`schema/SOURCE.json`](schema/SOURCE.json) records the canonical source, the
-  sha-256 of the vendored file, and the synchronisation policy. `npm test`
-  verifies the checksum offline; a scheduled repository job compares the
-  vendored copy against the canonical published schema over the network.
+- `@agent-manifest/schema` records its own canonical source, sha-256 and
+  synchronisation policy in the `SOURCE.json` it ships. `npm test` verifies that
+  checksum offline; a scheduled repository job compares the installed schema
+  against the canonical published one over the network. Depending on a package
+  instead of keeping a copy does not remove the possibility of drift — it moves
+  where drift would appear, and those checks follow it.
 - v1.0 is frozen, so any difference is drift and is treated as an incident: the
-  CLI is not re-vendored until the divergence is explained upstream. A future
-  schema version will be vendored as an additional file under a new CLI minor
-  version, never by mutating this one.
+  CLI is not pinned to a new schema package until the divergence is explained
+  upstream. A future schema version arrives as an additional entry in that
+  package, adopted under a new CLI minor version, never silently.
 
 `--schema <path-or-url>` validates against a different schema. That schema is
-read as given — from disk, or over the network for a URL — and the vendored copy
-is not involved. `schema_version` then never reports `"1.0"`.
+read as given — from disk, or over the network for a URL — and the packaged
+schema is not involved. `schema_version` then never reports `"1.0"`.
 
 ## Compatibility and limits
 
@@ -316,7 +323,7 @@ is not involved. `schema_version` then never reports `"1.0"`.
 - A very large local file fails as a read error rather than exhausting memory
   silently, and every error output is one line plus, for an invalid manifest, one
   line per failing field.
-- The vendored schema is Agent Manifest v1.0 only. A manifest declaring another
+- The packaged schema is Agent Manifest v1.0 only. A manifest declaring another
   `manifest_version` fails validation against it; that is the schema's rule, not
   an extra check by the CLI.
 

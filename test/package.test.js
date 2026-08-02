@@ -47,12 +47,17 @@ test('no install-time or postinstall hooks are declared', () => {
 });
 
 test('the runtime dependency set is the audited one', () => {
-  assert.deepEqual(Object.keys(pkg.dependencies).sort(), ['ajv', 'ajv-formats']);
+  // Ajv is still what does the checking, but it is no longer this package's
+  // direct dependency: it arrives under @agent-manifest/client, which is where
+  // the shared validator lives. One dependency, one implementation.
+  assert.deepEqual(Object.keys(pkg.dependencies).sort(), ['@agent-manifest/client']);
   assert.equal(pkg.devDependencies, undefined);
 });
 
 test('published files list carries no fixtures, backlog or internal material', () => {
-  assert.deepEqual(pkg.files, ['bin', 'src', 'schema', 'CHANGELOG.md', 'README.md', 'LICENSE']);
+  // No `schema` entry: there is no schema directory in this repository any
+  // more. It comes from @agent-manifest/schema at install time.
+  assert.deepEqual(pkg.files, ['bin', 'src', 'CHANGELOG.md', 'README.md', 'LICENSE']);
 });
 
 test('the scope is published publicly and to the public registry', () => {

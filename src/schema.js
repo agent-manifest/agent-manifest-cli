@@ -1,35 +1,35 @@
-import { readFile } from 'node:fs/promises';
-import { fileURLToPath } from 'node:url';
-import { CliError } from './errors.js';
+import { schemaV1_0 } from '@agent-manifest/schema';
 import { readSource, parseJson } from './io.js';
 
 /**
- * Absolute path to the vendored copy of spec/v1.0/schema.json.
+ * The default schema, and where it comes from.
  *
- * This file is copied byte-for-byte from the frozen specification and is the
- * default, deterministic schema. It is read from disk only — never fetched.
+ * It used to be a file in this repository, copied by hand from the frozen
+ * specification and checked against a recorded checksum. It is now a
+ * dependency: @agent-manifest/schema distributes the same bytes as data, from
+ * the registry, with provenance. The copy that lived here is gone rather than
+ * kept in sync, because a copy kept in sync is still a copy that can drift.
+ *
+ * The schema is still never fetched at run time. It arrives at install time
+ * and is read from node_modules like any other module.
  */
-export const VENDORED_SCHEMA_PATH = fileURLToPath(
-  new URL('../schema/agent-manifest-v1.0.schema.json', import.meta.url),
-);
 
 /**
- * Schema version reported for the vendored schema.
- *
- * This is the only place "1.0" may be reported. A non-vendored schema must
- * never resolve to "1.0".
+ * The packaged default schema: the Agent Manifest v1.0 JSON Schema.
  */
-export const VENDORED_SCHEMA_VERSION = '1.0';
+export const PACKAGED_SCHEMA = schemaV1_0;
 
-/** Load and parse the vendored default schema from local disk. */
-export async function loadVendoredSchema() {
-  let text;
-  try {
-    text = await readFile(VENDORED_SCHEMA_PATH, 'utf8');
-  } catch {
-    throw new CliError(2, 'Cannot read vendored schema.');
-  }
-  return parseJson(text, 'vendored schema');
+/**
+ * Schema version reported for the packaged schema.
+ *
+ * This is the only place "1.0" may be reported. A schema supplied with
+ * --schema must never resolve to "1.0".
+ */
+export const PACKAGED_SCHEMA_VERSION = '1.0';
+
+/** Return the packaged default schema. Reads nothing and fetches nothing. */
+export async function loadPackagedSchema() {
+  return PACKAGED_SCHEMA;
 }
 
 /** Load and parse an alternative schema from a file path or http(s) URL. */
@@ -45,7 +45,7 @@ export async function loadAlternativeSchema(ref) {
  *   2. otherwise its `$id`;
  *   3. otherwise null.
  *
- * Never returns "1.0" — that value is reserved for the vendored schema.
+ * Never returns "1.0" — that value is reserved for the packaged schema.
  *
  * @param {unknown} schema Parsed alternative schema document.
  * @returns {string|number|null}

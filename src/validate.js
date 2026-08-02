@@ -1,61 +1,55 @@
-import Ajv2020 from 'ajv/dist/2020.js';
-import addFormats from 'ajv-formats';
+import { compileSchema as compileShared, validate as validateShared } from '@agent-manifest/client/validate';
 import { CliError } from './errors.js';
 
 /**
- * Convert a single Ajv error object into the public { path, message } shape.
+ * Structural validation, delegated to @agent-manifest/client.
  *
- * For "required" errors the missing property is appended to the instance path
- * so the JSON path points at the field that should exist. The message is taken
- * verbatim from Ajv — no suggestions, scoring, or rewrites are added.
+ * This CLI used to compile and run Ajv itself against a schema file kept in
+ * this repository. Both are gone: the schema arrives as data from
+ * @agent-manifest/schema and the checking is done by the shared validator, so
+ * a manifest gets the same verdict here as it does anywhere else in the
+ * ecosystem. What stays here is the part that is genuinely this tool's: the
+ * exit-code contract.
+ *
+ * The shared validator reports `schemaValid`. This CLI has always reported
+ * `valid` in its --json output, and that field is public contract, so it is
+ * mapped at this boundary and nowhere else. The rename is deliberate upstream
+ * — `valid` reads as "the agent is fine" — and the CLI's own documentation
+ * carries the same caveat in prose.
  */
-function formatError(err) {
-  let path = err.instancePath || '';
-  if (err.keyword === 'required' && err.params && err.params.missingProperty) {
-    path = `${path}/${err.params.missingProperty}`;
-  }
-  if (path === '') {
-    path = '/';
-  }
-  return { path, message: err.message || 'validation error' };
-}
 
 /**
- * Compile a parsed JSON Schema into a validation function.
+ * Check that a schema compiles, so that an unusable schema fails as an
+ * operational error rather than as a manifest that happens not to validate.
  *
- * Compilation is part of the schema-load stage: a failure here is an
- * operational error (exit code 2), not a manifest validation failure.
+ * Compilation is part of the schema-load stage: a failure here is exit code 2,
+ * never a validation failure. The shared validator caches compiled functions
+ * per schema object, so the compile done here is reused by validateData.
  *
  * @param {object} schema Parsed JSON Schema document.
- * @returns {(data: unknown) => boolean} Ajv validate function.
+ * @returns {object} The same schema, once it is known to compile.
  */
 export function compileSchema(schema) {
-  const ajv = new Ajv2020({ allErrors: true, strict: false });
-  addFormats(ajv);
   try {
-    return ajv.compile(schema);
+    compileShared(schema);
   } catch (err) {
     throw new CliError(2, `Cannot compile schema: ${err.message}`);
   }
+  return schema;
 }
 
 /**
- * Run a compiled validate function against parsed manifest data.
+ * Run a schema against parsed manifest data.
  *
  * Performs structural schema validation only. It does not score, rank,
- * recommend, or enforce anything beyond what the schema declares.
+ * recommend, or enforce anything beyond what the schema declares. Ajv messages
+ * are passed through verbatim by the shared validator.
  *
- * @param {(data: unknown) => boolean} validateFn Compiled Ajv validate function.
+ * @param {object} schema Parsed JSON Schema document.
  * @param {unknown} data Parsed manifest document.
  * @returns {{ valid: boolean, errors: Array<{path: string, message: string}> }}
  */
-export function validateData(validateFn, data) {
-  const ok = validateFn(data);
-  if (ok) {
-    return { valid: true, errors: [] };
-  }
-  return {
-    valid: false,
-    errors: (validateFn.errors || []).map(formatError),
-  };
+export function validateData(schema, data) {
+  const result = validateShared(data, { schema });
+  return { valid: result.schemaValid, errors: result.errors };
 }

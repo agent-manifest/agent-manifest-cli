@@ -3,17 +3,17 @@ import { createColors, shouldUseColor } from './color.js';
 import { readSource, parseJson, describeRef, STDIN_REF } from './io.js';
 import { writeOut, writeErr } from './output.js';
 import {
-  loadVendoredSchema,
+  loadPackagedSchema,
   loadAlternativeSchema,
   resolveAlternativeSchemaVersion,
-  VENDORED_SCHEMA_VERSION,
+  PACKAGED_SCHEMA_VERSION,
 } from './schema.js';
 import { compileSchema, validateData } from './validate.js';
 import { CLI_VERSION } from './version.js';
 
 const USAGE = `agent-manifest validate <file|url|-> [--schema <path-or-url>] [--json] [--no-color]
 
-Validate an Agent Manifest against the vendored Agent Manifest v1.0 JSON Schema.
+Validate an Agent Manifest against the packaged Agent Manifest v1.0 JSON Schema.
 Structural validation only: the CLI does not score, rank, certify, or enforce.
 
 Arguments:
@@ -21,7 +21,7 @@ Arguments:
 
 Options:
   --schema <path-or-url>  Validate against an alternative schema instead of the
-                          vendored Agent Manifest v1.0 schema.
+                          packaged Agent Manifest v1.0 schema.
   --json                  Emit a single machine-readable JSON object on stdout.
   --no-color              Never emit ANSI colour. NO_COLOR is also honoured.
   -h, --help              Show this help.
@@ -142,10 +142,10 @@ async function runValidate(positionals, opts, ctx) {
     schema = await loadAlternativeSchema(opts.schema);
     schemaVersion = resolveAlternativeSchemaVersion(schema);
   } else {
-    schema = await loadVendoredSchema();
-    schemaVersion = VENDORED_SCHEMA_VERSION;
+    schema = await loadPackagedSchema();
+    schemaVersion = PACKAGED_SCHEMA_VERSION;
   }
-  const validateFn = compileSchema(schema);
+  compileSchema(schema);
 
   // Schema is now fully loaded. Operational errors from here on report the
   // resolved schema_version.
@@ -155,7 +155,7 @@ async function runValidate(positionals, opts, ctx) {
   const inputText = await readSource(inputRef, 'input');
   const data = parseJson(inputText, 'input');
 
-  const result = validateData(validateFn, data);
+  const result = validateData(schema, data);
 
   return opts.json
     ? reportJson(result, schemaVersion)

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { parseArgs } from '../src/cli.js';
 import { shouldUseColor, createColors } from '../src/color.js';
 import { stripBom, isUrl, describeRef, readSource } from '../src/io.js';
-import { loadVendoredSchema, resolveAlternativeSchemaVersion } from '../src/schema.js';
+import { loadPackagedSchema, resolveAlternativeSchemaVersion } from '../src/schema.js';
 import { compileSchema } from '../src/validate.js';
 import { CliError } from '../src/errors.js';
 
@@ -96,13 +96,13 @@ test('an uncompilable schema is an operational error, not a validation failure',
 
 // --- the default path never touches the network ------------------------------
 
-test('the vendored schema and a local file are read without any fetch', async () => {
+test('the packaged schema and a local file are read without any fetch', async () => {
   const realFetch = globalThis.fetch;
   globalThis.fetch = () => {
     throw new Error('the default path must not use the network');
   };
   try {
-    const schema = await loadVendoredSchema();
+    const schema = await loadPackagedSchema();
     assert.equal(schema.$id, 'https://agent-manifest-spec.org/spec/v1.0/schema.json');
 
     const text = await readSource(

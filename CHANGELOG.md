@@ -9,7 +9,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## Unreleased
 
-Nothing yet.
+### Changed
+
+- The v1.0 schema is no longer a copy kept in this repository. It arrives from
+  [`@agent-manifest/schema`](https://www.npmjs.com/package/@agent-manifest/schema),
+  and the checking is done by the shared validator in
+  [`@agent-manifest/client`](https://www.npmjs.com/package/@agent-manifest/client)
+  instead of an Ajv setup maintained here. `ajv` and `ajv-formats` are no longer
+  direct dependencies; they arrive under the client.
+- `--help` says "packaged" where it used to say "vendored", because nothing is
+  vendored any more.
+
+Validation results are unchanged. The command contract, the arguments, the exit
+codes and the `--json` shape are untouched, and the same manifests produce
+byte-identical output before and after.
+
+### Removed
+
+- `schema/agent-manifest-v1.0.schema.json` and `schema/SOURCE.json`. The
+  provenance and checksum they recorded now travel inside
+  `@agent-manifest/schema`, and the tests and the scheduled parity job check the
+  installed dependency against the canonical published schema instead of a local
+  copy.
 
 ## 0.1.1 — 2026-07-21
 

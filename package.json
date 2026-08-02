@@ -40,7 +40,6 @@
   "files": [
     "bin",
     "src",
-    "schema",
     "CHANGELOG.md",
     "README.md",
     "LICENSE"
@@ -53,7 +52,6 @@
     "check:package": "npm pack --dry-run"
   },
   "dependencies": {
-    "ajv": "^8.17.1",
-    "ajv-formats": "^3.0.1"
+    "@agent-manifest/client": "^0.1.0"
   }
 }

@@ -74,9 +74,16 @@ jobs:
           npm test
           node scripts/check-schema-parity.js
 
+      # Read the file rather than ask npm for it. `npm pkg get` writes its
+      # warnings to the same stream as its answer on some npm builds, and
+      # setup-node leaves an .npmrc here that npm warns about, so the answer can
+      # arrive with a line of prose in front of it and nothing downstream can
+      # parse it. This step fails closed, so the symptom would be a correct
+      # release refusing to publish rather than a wrong one publishing.
       - name: Check that the tag matches the version being published
         run: |
-          version=$(npm pkg get version | tr -d '"')
+          set -euo pipefail
+          version=$(python3 -c "import json;print(json.load(open('package.json'))['version'])")
           ref="${GITHUB_REF#refs/tags/}"
           if [ "$GITHUB_REF" != "$ref" ] && [ "$ref" != "v$version" ]; then
             echo "Dispatched against $ref but the package version is $version."

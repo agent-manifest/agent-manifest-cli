@@ -17,13 +17,15 @@ Not accepted here:
 
 - Changes to the Agent Manifest schema or specification. Those belong in
   [agent-manifest/agent-manifest](https://github.com/agent-manifest/agent-manifest).
-  The vendored schema in this repository is a byte-for-byte copy and is never
-  edited locally — see [`schema/SOURCE.json`](schema/SOURCE.json).
+  The schema is not kept in this repository at all: it arrives from
+  [`@agent-manifest/schema`](https://www.npmjs.com/package/@agent-manifest/schema),
+  which records its own provenance and checksum.
 - Scoring, ranking, certification, policy enforcement, or any interpretation of
   a manifest beyond what the schema declares. The CLI validates structure.
 - Telemetry, analytics, auto-update, or any install-time script.
 - New runtime dependencies without a specific, argued need. The dependency set
-  is deliberately `ajv` and `ajv-formats`.
+  is deliberately `@agent-manifest/client`, which brings the schema and the
+  shared validator with it.
 - New commands added for symmetry. `validate` is the only command; see
   [BACKLOG.md](BACKLOG.md).
 
@@ -34,8 +36,8 @@ npm ci
 npm test               # unit, contract and end-to-end tests, offline
 npm run check:package  # tarball contents, no publish
 
-node scripts/check-schema-parity.js  # online: vendored schema vs the canonical
-                                     # published copy
+node scripts/check-schema-parity.js  # online: the installed @agent-manifest/schema
+                                     # vs the canonical published copy
 ```
 
 `scripts/` holds repository maintenance tools. They are deliberately not

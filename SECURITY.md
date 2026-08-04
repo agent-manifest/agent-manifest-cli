@@ -2,8 +2,10 @@
 
 ## What this tool does and does not do
 
-`@agent-manifest/cli` reads a JSON document and checks its structure against a
-vendored copy of the Agent Manifest v1.0 JSON Schema. It does not authenticate,
+`@agent-manifest/cli` reads a JSON document and checks its structure against the
+Agent Manifest v1.0 JSON Schema, which arrives from the `@agent-manifest/schema`
+package rather than from a copy kept in this repository; the checking itself is
+done by the shared validator in `@agent-manifest/client`. It does not authenticate,
 authorise, enforce, certify, or attest anything. A manifest that validates is a
 well-formed declaration; it is not evidence that the declaring agent behaves as
 declared.
@@ -39,8 +41,9 @@ project and no response time is promised.
 - Any file write, process execution, or network access not described above.
 - Any path by which a crafted document escapes the read-only, structural
   contract described here.
-- Divergence between the vendored schema and the canonical specification
-  (see [`schema/SOURCE.json`](schema/SOURCE.json)).
+- Divergence between the schema the CLI validates against and the canonical
+  specification (checked by `scripts/check-schema-parity.js`, which compares the
+  installed `@agent-manifest/schema` with the published canonical file).
 
 ## Out of scope
 
